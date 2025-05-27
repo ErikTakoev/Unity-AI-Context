@@ -43,21 +43,12 @@ Code analysis starts automatically when Unity launches or scripts are recompiled
 Adds additional context to a class, method, field, or property:
 
 ```csharp
-[ContextCodeAnalyzer("This class is responsible for managing game state")]
-public class GameStateManager : MonoBehaviour
+[ContextCodeAnalyzer("Gets anchor position for multi-cell chips positioning")]
+public Vector2 GetAnchorPosition(Vector2 originalPosition)
 {
-    [ContextCodeAnalyzer("Current game state")]
-    public GameState CurrentState { get; private set; }
-    
-    [ContextCodeAnalyzer("Transitions the game to a new state")]
-    public void TransitionToState(GameState newState)
-    {
-        // ...
-    }
+    ...
 }
 ```
-
-![ContextCodeAnalyzer](Readme/Attributes/ContextCodeAnalyzer.png)
 
 #### IgnoreCodeAnalyzerAttribute
 
@@ -65,13 +56,11 @@ Excludes a class, method, or field from analysis:
 
 ```csharp
 [IgnoreCodeAnalyzer]
-public class DebugHelper
+private void TestFillField()
 {
-    // This class will be ignored during analysis
+    ...
 }
 ```
-
-![IgnoreCodeAnalyzer](Readme/Attributes/IgnoreCodeAnalyzer.png)
 
 ## Quick Project Context Population
 
