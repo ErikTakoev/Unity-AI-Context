@@ -96,7 +96,7 @@ Choose one of the options:
 #### Option B: Via regular AI chat
 1. **Ask the AI to generate an updated version of XML** with added context:
    ```
-   Generate an updated version of XML with detailed context added to the "c" attribute for classes and methods
+   Generate an updated version of XML with detailed context added to the "c" attribute for classes, methods and fields
    ```
 2. **Manually make changes** to the project code, adding appropriate `[ContextCodeAnalyzer("...")]` attributes
 
