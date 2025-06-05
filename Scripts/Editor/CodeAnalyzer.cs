@@ -241,10 +241,7 @@ namespace Expecto
             string className = type.Name;
             if (type.IsGenericType)
             {
-                // Use our GetFormattedTypeName method to get a properly formatted name
                 className = GetFormattedTypeName(type);
-                // Replace XML entities for display in the class name
-                className = className.Replace("&amp;lt;", "<").Replace("&amp;gt;", ">");
             }
 
             // Skip if we've already processed this class name
@@ -472,7 +469,7 @@ namespace Expecto
             string[] argNames = genericArgs.Select(GetFormattedTypeName).ToArray();
 
             // For XML output, use encoded brackets
-            return $"{baseName}&amp;lt;{string.Join(", ", argNames)}&amp;gt;";
+            return $"{baseName}<{string.Join(", ", argNames)}>";
         }
 
         private static string GetCSharpTypeName(string typeName)
