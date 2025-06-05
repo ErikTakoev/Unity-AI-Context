@@ -68,10 +68,12 @@ namespace Expecto
         private static void AnalyzeCode(string[] namespaceFilters, string outputFileName)
         {
             List<ClassInfo> classes = new List<ClassInfo>();
+            HashSet<string> processedClassNames = new HashSet<string>();
 
             // Get all loaded assemblies
             System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
+            // First pass: Process all regular (non-generic) types
             foreach (System.Reflection.Assembly assembly in assemblies)
             {
                 try
@@ -106,171 +108,16 @@ namespace Expecto
                             continue; // Skip nested classes
                         }
 
+                        // Skip generic type definitions (like List<T>)
+                        if (type.IsGenericTypeDefinition)
+                        {
+                            continue;
+                        }
+
                         // Filter by namespace if needed
                         if (type.Namespace != null && namespaceFilters.Any(filter => type.Namespace == filter))
                         {
-                            string classContext = null;
-                            if (type.IsDefined(typeof(ContextCodeAnalyzerAttribute), false))
-                            {
-                                classContext = type.GetCustomAttribute<ContextCodeAnalyzerAttribute>().Context;
-                            }
-
-                            ClassInfo classInfo = new ClassInfo
-                            {
-                                Name = type.Name,
-                                Namespace = type.Namespace,
-                                BaseClass = type.BaseType?.FullName,
-                                Fields = new List<FieldData>(),
-                                Methods = new List<MethodData>(),
-                                Context = classContext
-                            };
-
-
-                            // Get properties first and remember their names to avoid showing similar fields
-                            HashSet<string> propertyNames = new HashSet<string>();
-                            PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                            foreach (PropertyInfo property in properties)
-                            {
-                                // Only include properties that are declared in this type (not inherited)
-                                if (property.DeclaringType != type)
-                                {
-                                    continue;
-                                }
-
-                                string getterModifier = "-";
-                                string setterModifier = "-";
-
-                                // Determine access modifier for getter
-                                if (property.GetMethod != null)
-                                {
-                                    getterModifier = GetAccessModifierSymbol(property.GetMethod);
-                                }
-
-                                // Determine access modifier for setter
-                                if (property.SetMethod != null)
-                                {
-                                    setterModifier = GetAccessModifierSymbol(property.SetMethod);
-                                }
-
-                                string typeName = GetFormattedTypeName(property.PropertyType);
-
-                                classInfo.Fields.Add(new FieldData
-                                {
-                                    Name = property.Name,
-                                    Type = typeName,
-                                    GetterModifier = getterModifier,
-                                    SetterModifier = setterModifier,
-                                    IsProperty = true
-                                });
-
-                                // Store both exact name and lowercase version for case-insensitive comparison
-                                propertyNames.Add(property.Name);
-                                propertyNames.Add(property.Name.ToLowerInvariant());
-                            }
-
-                            // Get fields
-                            FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                            foreach (FieldInfo field in fields)
-                            {
-                                // Skip fields declared in parent classes
-                                if (field.DeclaringType != type)
-                                {
-                                    continue;
-                                }
-
-                                // Skip backing fields for auto-properties
-                                if (field.Name.Contains("k__BackingField"))
-                                {
-                                    continue;
-                                }
-
-                                if (field.IsDefined(typeof(IgnoreCodeAnalyzerAttribute), false))
-                                {
-                                    continue;
-                                }
-
-                                string fieldName = field.Name;
-
-                                // Skip fields that match property names or case-insensitive versions
-                                // Check if there's a property with the same name or a capitalized version of this field
-                                string capitalizedFieldName = char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
-                                if (propertyNames.Contains(fieldName) || propertyNames.Contains(capitalizedFieldName))
-                                {
-                                    continue;
-                                }
-
-                                string accessModifier = GetAccessModifierSymbol(field);
-                                string typeName = GetFormattedTypeName(field.FieldType);
-                                string context = null;
-                                if (field.IsDefined(typeof(ContextCodeAnalyzerAttribute), false))
-                                {
-                                    context = field.GetCustomAttribute<ContextCodeAnalyzerAttribute>().Context;
-                                }
-
-                                classInfo.Fields.Add(new FieldData
-                                {
-                                    Name = fieldName,
-                                    Type = typeName,
-                                    AccessModifier = accessModifier,
-                                    Context = context
-                                });
-                            }
-
-                            // Get methods
-                            MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                            foreach (MethodInfo method in methods)
-                            {
-                                string methodName = method.Name;
-
-                                // Skip property accessors
-                                if (methodName.StartsWith("get_") || methodName.StartsWith("set_"))
-                                {
-                                    continue; // Skip property accessor methods
-                                }
-
-                                // Skip event accessors
-                                if (methodName.StartsWith("add_") || methodName.StartsWith("remove_"))
-                                {
-                                    continue; // Skip event accessor methods
-                                }
-                                if (method.IsDefined(typeof(IgnoreCodeAnalyzerAttribute), false))
-                                {
-                                    continue;
-                                }
-
-                                // Skip anonymous methods and compiler-generated methods
-                                if (methodName.Contains("<") && (methodName.Contains(">b__") || methodName.Contains(">c__")))
-                                {
-                                    continue; // Skip this method
-                                }
-
-                                string accessModifier = GetAccessModifierSymbol(method);
-                                var parameters = method.GetParameters();
-                                var paramList = parameters != null && parameters.Length > 0
-                                    ? parameters.Select(p => new ParameterData
-                                    {
-                                        Type = GetFormattedTypeName(p.ParameterType),
-                                        Name = string.IsNullOrEmpty(p.Name) ? "param" : p.Name
-                                    }).ToList()
-                                    : new List<ParameterData>();
-
-                                string context = null;
-                                if (method.IsDefined(typeof(ContextCodeAnalyzerAttribute), false))
-                                {
-                                    context = method.GetCustomAttribute<ContextCodeAnalyzerAttribute>().Context;
-                                }
-
-                                classInfo.Methods.Add(new MethodData
-                                {
-                                    Name = methodName,
-                                    AccessModifier = accessModifier,
-                                    ReturnType = GetFormattedTypeName(method.ReturnType),
-                                    Parameters = paramList,
-                                    Context = context
-                                });
-                            }
-
-                            classes.Add(classInfo);
+                            ProcessType(type, classes, processedClassNames);
                         }
                     }
                 }
@@ -280,8 +127,287 @@ namespace Expecto
                 }
             }
 
+            // Second pass: Find generic types used in fields, properties, and methods
+            HashSet<Type> genericTypesToProcess = new HashSet<Type>();
+
+            foreach (System.Reflection.Assembly assembly in assemblies)
+            {
+                try
+                {
+                    foreach (Type type in assembly.GetTypes())
+                    {
+                        // Skip if not in our target namespaces
+                        if (type.Namespace == null || !namespaceFilters.Any(filter => type.Namespace == filter))
+                            continue;
+
+                        // Check fields
+                        foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                        {
+                            CollectGenericTypes(field.FieldType, genericTypesToProcess);
+                        }
+
+                        // Check properties
+                        foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                        {
+                            CollectGenericTypes(property.PropertyType, genericTypesToProcess);
+                        }
+
+                        // Check method parameters and return types
+                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                        {
+                            CollectGenericTypes(method.ReturnType, genericTypesToProcess);
+
+                            foreach (ParameterInfo param in method.GetParameters())
+                            {
+                                CollectGenericTypes(param.ParameterType, genericTypesToProcess);
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(LogPrefix + $"Error collecting generic types: {e.Message}");
+                }
+            }
+
+            // Process the collected generic types
+            foreach (Type genericType in genericTypesToProcess)
+            {
+                // Skip if not in our target namespaces
+                if (genericType.Namespace == null || !namespaceFilters.Any(filter => genericType.Namespace == filter))
+                    continue;
+
+                ProcessType(genericType, classes, processedClassNames);
+            }
+
             // Export to XML, split by namespace
             ExportToXmlByNamespace(classes, outputFileName);
+        }
+
+        private static void CollectGenericTypes(Type type, HashSet<Type> genericTypes)
+        {
+            // Skip null types
+            if (type == null)
+                return;
+
+            // If this is a generic type (like List<string>), add it
+            // But only if it's not a generic type definition (like List<T>)
+            if (type.IsGenericType && !type.IsGenericTypeDefinition)
+            {
+                // Check if all generic arguments are concrete types (not type parameters)
+                bool allArgumentsAreConcrete = true;
+                foreach (Type argType in type.GetGenericArguments())
+                {
+                    if (argType.IsGenericParameter)
+                    {
+                        allArgumentsAreConcrete = false;
+                        break;
+                    }
+                }
+
+                // Only add types with concrete generic arguments
+                if (allArgumentsAreConcrete)
+                {
+                    genericTypes.Add(type);
+                }
+
+                // Also process its generic arguments
+                foreach (Type argType in type.GetGenericArguments())
+                {
+                    CollectGenericTypes(argType, genericTypes);
+                }
+            }
+
+            // If it's an array, process its element type
+            if (type.IsArray)
+            {
+                CollectGenericTypes(type.GetElementType(), genericTypes);
+            }
+        }
+
+        private static void ProcessType(Type type, List<ClassInfo> classes, HashSet<string> processedClassNames)
+        {
+            // Skip generic type definitions (like List<T>, Dictionary<TKey, TValue>)
+            if (type.IsGenericTypeDefinition)
+                return;
+
+            string classContext = null;
+            if (type.IsDefined(typeof(ContextCodeAnalyzerAttribute), false))
+            {
+                classContext = type.GetCustomAttribute<ContextCodeAnalyzerAttribute>().Context;
+            }
+
+            // Get the class name, handling generic types
+            string className = type.Name;
+            if (type.IsGenericType)
+            {
+                // Use our GetFormattedTypeName method to get a properly formatted name
+                className = GetFormattedTypeName(type);
+                // Replace XML entities for display in the class name
+                className = className.Replace("&amp;lt;", "<").Replace("&amp;gt;", ">");
+            }
+
+            // Skip if we've already processed this class name
+            if (processedClassNames.Contains(className))
+                return;
+
+            processedClassNames.Add(className);
+
+            ClassInfo classInfo = new ClassInfo
+            {
+                Name = className,
+                Namespace = type.Namespace,
+                BaseClass = type.BaseType?.FullName,
+                Fields = new List<FieldData>(),
+                Methods = new List<MethodData>(),
+                Context = classContext
+            };
+
+            // Get properties first and remember their names to avoid showing similar fields
+            HashSet<string> propertyNames = new HashSet<string>();
+            PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
+            foreach (PropertyInfo property in properties)
+            {
+                // Only include properties that are declared in this type (not inherited)
+                if (property.DeclaringType != type)
+                {
+                    continue;
+                }
+
+                string getterModifier = "-";
+                string setterModifier = "-";
+
+                // Determine access modifier for getter
+                if (property.GetMethod != null)
+                {
+                    getterModifier = GetAccessModifierSymbol(property.GetMethod);
+                }
+
+                // Determine access modifier for setter
+                if (property.SetMethod != null)
+                {
+                    setterModifier = GetAccessModifierSymbol(property.SetMethod);
+                }
+
+                string typeName = GetFormattedTypeName(property.PropertyType);
+
+                classInfo.Fields.Add(new FieldData
+                {
+                    Name = property.Name,
+                    Type = typeName,
+                    GetterModifier = getterModifier,
+                    SetterModifier = setterModifier,
+                    IsProperty = true
+                });
+
+                // Store both exact name and lowercase version for case-insensitive comparison
+                propertyNames.Add(property.Name);
+                propertyNames.Add(property.Name.ToLowerInvariant());
+            }
+
+            // Get fields
+            FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            foreach (FieldInfo field in fields)
+            {
+                // Skip fields declared in parent classes
+                if (field.DeclaringType != type)
+                {
+                    continue;
+                }
+
+                // Skip backing fields for auto-properties
+                if (field.Name.Contains("k__BackingField"))
+                {
+                    continue;
+                }
+
+                if (field.IsDefined(typeof(IgnoreCodeAnalyzerAttribute), false))
+                {
+                    continue;
+                }
+
+                string fieldName = field.Name;
+
+                // Skip fields that match property names or case-insensitive versions
+                // Check if there's a property with the same name or a capitalized version of this field
+                string capitalizedFieldName = char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
+                if (propertyNames.Contains(fieldName) || propertyNames.Contains(capitalizedFieldName))
+                {
+                    continue;
+                }
+
+                string accessModifier = GetAccessModifierSymbol(field);
+                string typeName = GetFormattedTypeName(field.FieldType);
+                string context = null;
+                if (field.IsDefined(typeof(ContextCodeAnalyzerAttribute), false))
+                {
+                    context = field.GetCustomAttribute<ContextCodeAnalyzerAttribute>().Context;
+                }
+
+                classInfo.Fields.Add(new FieldData
+                {
+                    Name = fieldName,
+                    Type = typeName,
+                    AccessModifier = accessModifier,
+                    Context = context
+                });
+            }
+
+            // Get methods
+            MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
+            foreach (MethodInfo method in methods)
+            {
+                string methodName = method.Name;
+
+                // Skip property accessors
+                if (methodName.StartsWith("get_") || methodName.StartsWith("set_"))
+                {
+                    continue; // Skip property accessor methods
+                }
+
+                // Skip event accessors
+                if (methodName.StartsWith("add_") || methodName.StartsWith("remove_"))
+                {
+                    continue; // Skip event accessor methods
+                }
+                if (method.IsDefined(typeof(IgnoreCodeAnalyzerAttribute), false))
+                {
+                    continue;
+                }
+
+                // Skip anonymous methods and compiler-generated methods
+                if (methodName.Contains("<") && (methodName.Contains(">b__") || methodName.Contains(">c__")))
+                {
+                    continue; // Skip this method
+                }
+
+                string accessModifier = GetAccessModifierSymbol(method);
+                var parameters = method.GetParameters();
+                var paramList = parameters != null && parameters.Length > 0
+                    ? parameters.Select(p => new ParameterData
+                    {
+                        Type = GetFormattedTypeName(p.ParameterType),
+                        Name = string.IsNullOrEmpty(p.Name) ? "param" : p.Name
+                    }).ToList()
+                    : new List<ParameterData>();
+
+                string context = null;
+                if (method.IsDefined(typeof(ContextCodeAnalyzerAttribute), false))
+                {
+                    context = method.GetCustomAttribute<ContextCodeAnalyzerAttribute>().Context;
+                }
+
+                classInfo.Methods.Add(new MethodData
+                {
+                    Name = methodName,
+                    AccessModifier = accessModifier,
+                    ReturnType = GetFormattedTypeName(method.ReturnType),
+                    Parameters = paramList,
+                    Context = context
+                });
+            }
+
+            classes.Add(classInfo);
         }
 
         private static string GetAccessModifierSymbol(MethodInfo method)
@@ -326,11 +452,9 @@ namespace Expecto
                 return $"{elementTypeName}[]";
             }
 
-            // Convert system types to their C# aliases
-            string typeName = GetCSharpTypeName(type.Name);
-
+            // For non-generic types, just return the C# name
             if (!type.IsGenericType)
-                return typeName;
+                return GetCSharpTypeName(type.Name);
 
             // Get the generic type name without the `n suffix
             string baseName = type.Name;
@@ -340,15 +464,15 @@ namespace Expecto
                 baseName = baseName.Substring(0, backtickIndex);
             }
 
-            // Convert base name
+            // Convert base name to C# alias if applicable
             baseName = GetCSharpTypeName(baseName);
 
             // Get the generic arguments
             Type[] genericArgs = type.GetGenericArguments();
             string[] argNames = genericArgs.Select(GetFormattedTypeName).ToArray();
 
-            // Format using parentheses instead of angle brackets to avoid XML encoding issues
-            return $"{baseName}&lt;{string.Join(", ", argNames)}&gt;";
+            // For XML output, use encoded brackets
+            return $"{baseName}&amp;lt;{string.Join(", ", argNames)}&amp;gt;";
         }
 
         private static string GetCSharpTypeName(string typeName)
