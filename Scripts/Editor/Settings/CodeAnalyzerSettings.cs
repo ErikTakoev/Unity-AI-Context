@@ -7,7 +7,7 @@ namespace Expecto
     {
 
         [Tooltip("Output directory for generated XML files")]
-        public string outputDirectory;
+        public string outputDirectory = "AIContexts";
 
         [Tooltip("CodeAnalyzer will analyze only classes from these namespaces")]
         public string[] namespaceFilters;
