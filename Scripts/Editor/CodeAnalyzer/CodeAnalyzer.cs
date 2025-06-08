@@ -25,14 +25,9 @@ namespace Expecto
             };
         }
 
-        // Add menu item to manually trigger code analysis
-        [MenuItem("Expecto/Code/Analyze Code", priority = 1000)]
-        private static void AnalyzeCodeMenuItem()
-        {
-            RunCodeAnalysis();
-        }
 
-        static void RunCodeAnalysis()
+
+        public static void RunCodeAnalysis()
         {
             Debug.Log(LogPrefix + "Running code analysis...");
             var settings = AssetDatabase.FindAssets("t:CodeAnalyzerSettings");
