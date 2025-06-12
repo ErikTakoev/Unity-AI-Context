@@ -14,20 +14,26 @@ namespace Expecto
 		{
 #if UNITY_EDITOR
 			StringBuilder sb = new StringBuilder();
-			sb.AppendLine($"Purpose: {@purpose}");
-			sb.AppendLine($"Usage: {@usage}");
+			sb.Append($"Purpose: {@purpose}");
+			sb.Append($"; ");
+			sb.Append($"Usage: {@usage}");
+			sb.Append($"; ");
 			if (@params != null)
 			{
-				sb.AppendLine($"Params: {@params}");
+				sb.Append($"Params: {@params}");
+				sb.Append($"; ");
 			}
 			if (@returns != null)
 			{
-				sb.AppendLine($"Returns: {@returns}");
+				sb.Append($"Returns: {@returns}");
+				sb.Append($"; ");
 			}
 			if (@notes != null)
 			{
-				sb.AppendLine($"Notes: {@notes}");
+				sb.Append($"Notes: {@notes}");
+				sb.Append($"; ");
 			}
+			sb.Remove(sb.Length - 2, 2);
 			Context = sb.ToString();
 #endif
 		}
