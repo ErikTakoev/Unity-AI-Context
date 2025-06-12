@@ -1,0 +1,77 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Core Principles
+
+- **Use structured format with sections:**
+  - Use keywords for sections: `@purpose`, `@usage`, `@params`, `@returns`, `@notes`.
+  - Pass each section as a separate named parameter in the attribute constructor.
+
+- **Write in English:**
+  - All context must be in English, regardless of the code language or chat comments.
+
+- **Be concise but informative:**
+  - Each section should be short but contain all necessary information to understand the purpose, usage, and specifics of the method/class/field.
+
+## Section Structure
+
+- **purpose:**  
+  Clearly state what the class/method/field exists for.
+
+- **usage:**  
+  Specify when and how the method should be called or the class/field should be used.  
+  If the method is intended for overriding — mention this.
+
+- **@params:**  
+  For each parameter, specify its name and short description separated by semicolon.  
+  If there are no parameters — this section can be omitted.
+
+- **returns:**  
+  If the method returns a value, briefly describe what exactly is returned.
+
+- **notes:**  
+  Specify limitations, side effects, implementation specifics, specific call requirements, etc.
+
+## When to Add ContextCodeAnalyzer
+
+- Add the attribute to:
+  - Methods with non-obvious logic, complex behavior, or important side effects.
+  - Parameters/fields that affect class behavior or have non-obvious purpose.
+  - Any places where context will help avoid errors when using or extending the code.
+
+## When to Update ContextCodeAnalyzer
+
+- Update the attribute if:
+  - The logic of the method/class/field has changed.
+  - Parameters have been added or changed.
+  - The usage scenario has changed or new important nuances have appeared.
+  - After refactoring, if the meaning or structure of the code has changed.
+  - After receiving feedback that the context is not clear enough.
+
+## When to Remove ContextCodeAnalyzer
+
+- Remove the attribute if:
+  - The method/class/field has become so simple that its purpose is fully understandable from the name and signature.
+  - The context adds no new information beyond what is already obvious from the code.
+  - The method or class is no longer used (deleted or deprecated).
+  - After code simplification, when the logic has become trivial.
+
+## Additional Recommendations
+
+- **Maintain consistent section order:**  
+  Recommended order: `@purpose`, `@usage`, `@params`, `@returns`, `@notes`.
+
+- **Don't duplicate information from the name:**  
+  Avoid repeating what is already obvious from the method/class name.
+
+## Example of Correct Usage
+```csharp
+[ContextCodeAnalyzer(
+    @purpose: "Purpose text",
+    @usage: "Usage text; Usage text2",
+    @params: "param1 - param description; param2 - param description",
+    @notes: "Notes text; Notes text2"
+)]
+```
