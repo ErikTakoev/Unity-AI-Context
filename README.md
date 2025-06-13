@@ -4,6 +4,10 @@
 
 Unity tool for analyzing C# code structure and generating XML files with metadata about classes, methods, and fields. Specifically designed to improve context for AI assistants and tools. Allows AI to better understand project architecture without needing to index all code.
 
+## Video Presentation
+
+[![Watch the video](https://img.youtube.com/vi/Rfj9ufq07pU/0.jpg)](https://www.youtube.com/watch?v=Rfj9ufq07pU)
+
 ## Installation
 
 ### Via Package Manager
@@ -107,6 +111,10 @@ Access modifiers:
 - **+-** — public getter, private setter
 - **~** — protected
 - **-** — private
+
+## Support me and the project!
+
+![](Readme/HelpPlz.jpg)
 
 ## License
 

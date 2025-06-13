@@ -4,6 +4,10 @@
 
 Unity-інструмент для аналізу структури C# коду та генерації XML-файлів із метаданими про класи, методи та поля. Спеціально розроблений для покращення контексту для AI-асистентів і інструментів. Дозволяє AI краще розуміти архітектуру проєкту без необхідності індексувати весь код.
 
+## Відео презентація
+
+[![Watch the video](https://img.youtube.com/vi/Rfj9ufq07pU/0.jpg)](https://www.youtube.com/watch?v=Rfj9ufq07pU)
+
 ## Встановлення
 
 ### Через Package Manager
@@ -108,6 +112,10 @@ private void TestFillField()
 - **+-** — public getter, private setter
 - **~** — protected
 - **-** — private
+
+## Підтримай мене і проєкт!
+
+![](Readme/HelpPlz.jpg)
 
 ## Ліцензія
 
