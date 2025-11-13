@@ -21,6 +21,10 @@ namespace Expecto
         {
             EditorApplication.delayCall += () =>
             {
+                if (EditorApplication.isPlayingOrWillChangePlaymode)
+                {
+                    return;
+                }
                 RunCodeAnalysis();
             };
         }
