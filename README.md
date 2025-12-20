@@ -2,7 +2,7 @@
 
 🇺🇸 [English](README.md) | 🇺🇦 [Українська](README_UA.md)
 
-Unity tool for analyzing C# code structure and generating XML files with metadata about classes, methods, and fields. Specifically designed to improve context for AI assistants and tools. Allows AI to better understand project architecture without needing to index all code.
+Unity tool for analyzing C# code structure and generating XML and Markdown files with metadata about classes, methods, and fields. Specifically designed to improve context for AI assistants and tools. Allows AI to better understand project architecture without needing to index all code.
 
 ## Video Presentation
 
@@ -27,9 +27,15 @@ Unity tool for analyzing C# code structure and generating XML files with metadat
 2. The `CodeAnalyzerSettings.asset` file will be created automatically in the `Assets/Expecto` folder.
 3. If needed, move the file to your desired project folder.
 4. Configure parameters:
+
+   **XML Generation**
    - Output Directory: directory for saving XML files
    - Namespace Filters: namespaces to analyze
    - Combined Namespace Filters: namespaces to combine into a single XML file
+
+   **Markdown Generation**
+   - Generate Markdown: enables generation of Markdown files for easy reading
+   - Markdown Output Directory: directory for saving Markdown files (default is `Docs`)
 
 ![Create Settings Step 2](Readme/Settings/CreateSettings2.png)
 
@@ -111,6 +117,16 @@ Access modifiers:
 - **+-** — public getter, private setter
 - **~** — protected
 - **-** — private
+
+## Markdown Documentation Generation
+
+The tool automatically generates Markdown files that are easy for humans to read. They contain:
+- Structured Table of Contents
+- Inheritance information
+- Beautifully formatted context (Code Analyzer Context) with highlighted keys
+- Lists of fields and methods with their descriptions
+
+This allows using the generated documentation for both AI and developers.
 
 ## Support me and the project!
 
