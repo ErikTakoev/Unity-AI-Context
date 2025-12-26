@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Expecto
 {
-	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property)]
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property)]
 	public class ContextCodeAnalyzerAttribute : Attribute
 	{
 #if UNITY_EDITOR
@@ -13,7 +13,7 @@ namespace Expecto
 		public ContextCodeAnalyzerAttribute(string @purpose, string @usage, string @params = null, string @returns = null, string @notes = null)
 		{
 #if UNITY_EDITOR
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new();
 			sb.Append($"Purpose: {@purpose}");
 			sb.Append($"; ");
 			sb.Append($"Usage: {@usage}");
