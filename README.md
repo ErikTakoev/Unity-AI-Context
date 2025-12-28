@@ -128,10 +128,6 @@ The tool automatically generates Markdown files that are easy for humans to read
 
 This allows using the generated documentation for both AI and developers.
 
-## Support me and the project!
-
-![](Readme/HelpPlz.jpg)
-
 ## License
 
 [MIT](LICENSE)
