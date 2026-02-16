@@ -2,7 +2,7 @@
     "name": "AIContext.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:cbc042ecbf1a89f4a8a96725c0e06bf2"
+        "GUID:f768994342eea89479df0bf251622ab3"
     ],
     "includePlatforms": [
         "Editor"
