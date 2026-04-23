@@ -4,9 +4,6 @@
 
 Unity-інструмент для аналізу структури C# коду та генерації XML та Markdown файлів із метаданими про класи, методи та поля. Спеціально розроблений для покращення контексту для AI-асистентів і інструментів. Дозволяє AI краще розуміти архітектуру проєкту без необхідності індексувати весь код.
 
-## Відео презентація
-
-[![Watch the video](https://img.youtube.com/vi/Rfj9ufq07pU/0.jpg)](https://www.youtube.com/watch?v=Rfj9ufq07pU)
 
 ## Встановлення
 
@@ -23,12 +20,13 @@ Unity-інструмент для аналізу структури C# коду 
 ### Створення налаштувань
 
 1. У головному меню оберіть:  
-   `Expecto > AI Context > Create Settings`
+   `Tools > AI Context > Create Settings`
 2. Файл `CodeAnalyzerSettings.asset` буде створено автоматично у папці `Assets/Expecto`.
 3. За потреби перемістіть файл у бажану папку проєкту.
 4. Налаштуйте параметри:
    
    **XML Generation**
+   - Generate XML: вмикає генерацію XML-файлів
    - Output Directory: директорія для збереження XML-файлів
    - Namespace Filters: простори імен для аналізу
    - Combined Namespace Filters: простори імен, які потрібно об'єднати в один XML-файл
@@ -37,7 +35,6 @@ Unity-інструмент для аналізу структури C# коду 
    - Generate Markdown: вмикає генерацію Markdown-файлів для зручного читання
    - Markdown Output Directory: директорія для збереження Markdown-файлів (за замовчуванням `Docs`)
 
-![Створення налаштувань крок 2](Readme/Settings/CreateSettings2.png)
 
 ## Використання
 
@@ -46,7 +43,7 @@ Unity-інструмент для аналізу структури C# коду 
 Аналіз коду запускається автоматично при старті Unity або перекомпіляції скриптів. Також можна запустити аналіз вручну:
 
 1. У головному меню оберіть:  
-   `Expecto > AI Context > Generate Context`
+   `Tools > AI Context > Generate Context`
 
 ### Використання атрибутів
 

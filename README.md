@@ -4,10 +4,6 @@
 
 Unity tool for analyzing C# code structure and generating XML and Markdown files with metadata about classes, methods, and fields. Specifically designed to improve context for AI assistants and tools. Allows AI to better understand project architecture without needing to index all code.
 
-## Video Presentation
-
-[![Watch the video](https://img.youtube.com/vi/Rfj9ufq07pU/0.jpg)](https://www.youtube.com/watch?v=Rfj9ufq07pU)
-
 ## Installation
 
 ### Via Package Manager
@@ -23,12 +19,13 @@ Unity tool for analyzing C# code structure and generating XML and Markdown files
 ### Creating Settings
 
 1. In the main menu select:  
-   `Expecto > AI Context > Create Settings`
+   `Tools > AI Context > Create Settings`
 2. The `CodeAnalyzerSettings.asset` file will be created automatically in the `Assets/Expecto` folder.
 3. If needed, move the file to your desired project folder.
 4. Configure parameters:
 
    **XML Generation**
+   - Generate XML: enables generation of XML files
    - Output Directory: directory for saving XML files
    - Namespace Filters: namespaces to analyze
    - Combined Namespace Filters: namespaces to combine into a single XML file
@@ -37,8 +34,6 @@ Unity tool for analyzing C# code structure and generating XML and Markdown files
    - Generate Markdown: enables generation of Markdown files for easy reading
    - Markdown Output Directory: directory for saving Markdown files (default is `Docs`)
 
-![Create Settings Step 2](Readme/Settings/CreateSettings2.png)
-
 ## Usage
 
 ### Running Code Analysis
@@ -46,7 +41,7 @@ Unity tool for analyzing C# code structure and generating XML and Markdown files
 Code analysis runs automatically on Unity startup or script recompilation. You can also run analysis manually:
 
 1. In the main menu select:  
-   `Expecto > AI Context > Generate Context`
+   `Tools > AI Context > Generate Context`
 
 ### Using Attributes
 
