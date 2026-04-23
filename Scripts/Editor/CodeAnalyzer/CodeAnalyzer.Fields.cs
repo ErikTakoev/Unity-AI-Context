@@ -67,18 +67,7 @@ namespace Expecto
             foreach (FieldData field in sortedFields)
             {
                 XmlElement fieldElement = doc.CreateElement("Field");
-                string fieldText;
-
-                if (field.IsProperty)
-                {
-                    // Use combined modifier for properties (e.g. "+-" for public getter, private setter)
-                    string combinedModifier = field.GetterModifier + field.SetterModifier;
-                    fieldText = $"{combinedModifier} {field.Name}: {field.Type}";
-                }
-                else
-                {
-                    fieldText = $"{field.AccessModifier} {field.Name}: {field.Type}";
-                }
+                string fieldText = FormatField(field);
 
                 fieldElement.SetAttribute("v", fieldText);
                 if (field.Context != null)

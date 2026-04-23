@@ -35,7 +35,11 @@ namespace Expecto
 
             // Get the generic arguments
             Type[] genericArgs = type.GetGenericArguments();
-            string[] argNames = genericArgs.Select(GetFormattedTypeName).ToArray();
+            string[] argNames = new string[genericArgs.Length];
+            for (int i = 0; i < genericArgs.Length; i++)
+            {
+                argNames[i] = GetFormattedTypeName(genericArgs[i]);
+            }
 
             // For XML output, use encoded brackets
             return $"{baseName}<{string.Join(", ", argNames)}>";
@@ -64,6 +68,28 @@ namespace Expecto
                 case "Void": return "void";
                 default: return typeName;
             }
+        }
+
+        private static string FormatField(FieldData field)
+        {
+            if (field.IsProperty)
+            {
+                // Use combined modifier for properties (e.g. "+-" for public getter, private setter)
+                string combinedModifier = field.GetterModifier + field.SetterModifier;
+                return $"{combinedModifier} {field.Name}: {field.Type}";
+            }
+
+            return $"{field.AccessModifier} {field.Name}: {field.Type}";
+        }
+
+        private static string FormatMethod(MethodData method)
+        {
+            // Format parameters as "Type name, Type name, ..."
+            string parameters = method.Parameters != null && method.Parameters.Count > 0
+                ? string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))
+                : "";
+
+            return $"{method.AccessModifier} {method.Name}({parameters}): {method.ReturnType}";
         }
     }
 }

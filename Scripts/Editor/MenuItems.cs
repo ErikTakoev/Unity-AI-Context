@@ -6,7 +6,6 @@ namespace Expecto
 {
 	static class MenuItems
 	{
-
 		[MenuItem("Tools/AI Context/Generate Context", validate = true)]
 		private static bool ValidateAnalyzeCodeMenuItem()
 		{
@@ -15,6 +14,7 @@ namespace Expecto
 			{
 				return false;
 			}
+
 			return true;
 		}
 
@@ -32,6 +32,7 @@ namespace Expecto
 			{
 				return false;
 			}
+
 			return true;
 		}
 
@@ -43,7 +44,9 @@ namespace Expecto
 			{
 				return;
 			}
-			Selection.activeObject = AssetDatabase.LoadAssetAtPath<CodeAnalyzerSettings>(AssetDatabase.GUIDToAssetPath(settings[0]));
+
+			Selection.activeObject =
+				AssetDatabase.LoadAssetAtPath<CodeAnalyzerSettings>(AssetDatabase.GUIDToAssetPath(settings[0]));
 		}
 
 		[MenuItem("Tools/AI Context/Create Settings", validate = true)]
@@ -54,6 +57,7 @@ namespace Expecto
 			{
 				return true;
 			}
+
 			return false;
 		}
 
@@ -68,6 +72,7 @@ namespace Expecto
 				AssetDatabase.CreateFolder("Assets", "Expecto");
 				AssetDatabase.CreateFolder("Assets/Expecto", "Settings");
 			}
+
 			AssetDatabase.CreateAsset(settings, path);
 			Selection.activeObject = settings;
 

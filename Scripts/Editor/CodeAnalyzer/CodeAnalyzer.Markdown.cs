@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using UnityEngine;
@@ -8,131 +10,139 @@ namespace Expecto
 {
 	public static partial class CodeAnalyzer
 	{
-		private static void GenerateMarkdownFromXml(string xmlFilePath)
+		private static void ExportToMarkdownByNamespace(List<ClassInfo> classes, string outputFileName)
 		{
-			if (!File.Exists(xmlFilePath))
+			// Group classes by namespace
+			Dictionary<string, List<ClassInfo>> namespaceGroups = new Dictionary<string, List<ClassInfo>>();
+			foreach (var classInfo in classes)
 			{
-				Debug.LogError($"CodeAnalyzer: XML file not found at {xmlFilePath}");
-				return;
+				string ns = classInfo.Namespace ?? "";
+				if (!namespaceGroups.ContainsKey(ns))
+				{
+					namespaceGroups[ns] = new List<ClassInfo>();
+				}
+				namespaceGroups[ns].Add(classInfo);
 			}
 
-			try
+			// Create output directory if it doesn't exist
+			string outputDirPath = Path.Combine(Application.dataPath + "/..", markdownOutputDirectory);
+			if (!Directory.Exists(outputDirPath))
 			{
-				XmlDocument doc = new XmlDocument();
-				doc.Load(xmlFilePath);
+				_ = Directory.CreateDirectory(outputDirPath);
+			}
 
-				string fileName = Path.GetFileNameWithoutExtension(xmlFilePath) + ".md";
-				string outputDirPath = Path.Combine(Application.dataPath + "/..", markdownOutputDirectory);
-				if (!Directory.Exists(outputDirPath))
+			// Create safe filename
+			string safeFilename = outputFileName.Replace(".", "_") + ".md";
+			string filePath = Path.Combine(outputDirPath, safeFilename);
+
+			List<string> namespaces = new List<string>();
+			foreach (var group in namespaceGroups)
+			{
+				if (!namespaces.Contains(group.Key))
 				{
-					_ = Directory.CreateDirectory(outputDirPath);
+					namespaces.Add(group.Key);
 				}
-				string mdFilePath = Path.Combine(outputDirPath, fileName);
-				StringBuilder md = new StringBuilder();
+			}
+			string namespaceString = string.Join(";", namespaces);
 
-				XmlElement root = doc.DocumentElement;
-				string namespaceName = root.GetAttribute("Namespace");
+			StringBuilder md = new StringBuilder();
+			md.AppendLine($"# Namespace: {namespaceString}");
+			md.AppendLine();
 
-				md.AppendLine($"# Namespace: {namespaceName}");
-				md.AppendLine();
-
-				XmlNodeList classes = root.SelectNodes("Class");
-
-				// Table of Contents
-				if (classes.Count > 0)
+			// Table of Contents
+			List<ClassInfo> allSortedClasses = classes.OrderBy(c => c.Name).ToList();
+			if (allSortedClasses.Count > 0)
+			{
+				md.AppendLine("## Table of Contents");
+				foreach (var classInfo in allSortedClasses)
 				{
-					md.AppendLine("## Table of Contents");
-					foreach (XmlNode classNode in classes)
+					md.AppendLine($"- [{classInfo.Name}](#{classInfo.Name.ToLowerInvariant()})");
+				}
+				md.AppendLine();
+				md.AppendLine("---");
+				md.AppendLine();
+			}
+
+			foreach (var pair in namespaceGroups)
+			{
+				var nsClasses = pair.Value.OrderBy(c => c.Name).ToList();
+				foreach (var classInfo in nsClasses)
+				{
+					md.AppendLine($"## {classInfo.Name}");
+
+					if (!string.IsNullOrEmpty(classInfo.BaseClass))
 					{
-						if (classNode is XmlElement classElement)
+						// Strip the namespace from the base class name
+						string baseClassName = classInfo.BaseClass;
+						int lastDotIndex = baseClassName.LastIndexOf('.');
+						if (lastDotIndex >= 0 && lastDotIndex < baseClassName.Length - 1)
 						{
-							string className = classElement.GetAttribute("n");
-							// Assuming simple class names without spaces/special chars as is typical for C# classes
-							// If headers have spaces, they are usually replaced by '-' in markdown anchors.
-							// Since these are class names, ToLowerInvariant() is sufficient.
-							md.AppendLine($"- [{className}](#{className.ToLowerInvariant()})");
+							baseClassName = baseClassName.Substring(lastDotIndex + 1);
+						}
+
+						// Skip adding Object and ValueType as a base class
+						if (baseClassName != "Object" && baseClassName != "ValueType")
+						{
+							md.AppendLine($"**Inherits**: `{baseClassName}`");
 						}
 					}
-					md.AppendLine();
+
+					if (!string.IsNullOrEmpty(classInfo.Context))
+					{
+						md.AppendLine();
+						AppendFormattedContext(md, classInfo.Context, "> - ");
+					}
+
+					// Fields
+					if (classInfo.Fields.Count > 0)
+					{
+						md.AppendLine("#### Fields");
+						var sortedFields = classInfo.Fields
+							.OrderBy(f =>
+							{
+								if (f.IsProperty)
+								{
+									return (f.GetterModifier == "+") ? (f.SetterModifier == "+" ? 0 : 2) : 3;
+								}
+								return (f.AccessModifier == "+") ? 1 : 4;
+							})
+							.ThenBy(f => f.Name);
+
+						foreach (var field in sortedFields)
+						{
+							md.AppendLine($"- `{FormatField(field)}`");
+							if (!string.IsNullOrEmpty(field.Context))
+							{
+								AppendFormattedContext(md, field.Context, "    - ");
+							}
+						}
+					}
+
+					// Methods
+					if (classInfo.Methods.Count > 0)
+					{
+						md.AppendLine("#### Methods");
+						var sortedMethods = classInfo.Methods
+							.OrderBy(m => m.AccessModifier != "+")
+							.ThenBy(m => m.Name);
+
+						foreach (var method in sortedMethods)
+						{
+							md.AppendLine($"- `{FormatMethod(method)}`");
+							if (!string.IsNullOrEmpty(method.Context))
+							{
+								AppendFormattedContext(md, method.Context, "    - ");
+							}
+						}
+					}
+
 					md.AppendLine("---");
 					md.AppendLine();
 				}
-
-				foreach (XmlNode classNode in classes)
-				{
-					if (classNode is XmlElement classElement)
-					{
-						string className = classElement.GetAttribute("n");
-						string baseClass = classElement.GetAttribute("b");
-						string context = classElement.GetAttribute("c");
-
-						md.AppendLine($"## {className}");
-
-						if (!string.IsNullOrEmpty(baseClass))
-						{
-							md.AppendLine($"**Inherits**: `{baseClass}`");
-						}
-
-						if (!string.IsNullOrEmpty(context))
-						{
-							md.AppendLine();
-							AppendFormattedContext(md, context, "> - ");
-						}
-
-						// Fields
-						XmlNodeList fields = classElement.SelectNodes("Fields/Field");
-						if (fields.Count > 0)
-						{
-							md.AppendLine("#### Fields");
-							foreach (XmlNode fieldNode in fields)
-							{
-								if (fieldNode is XmlElement fieldElement)
-								{
-									string value = fieldElement.GetAttribute("v");
-									string fieldContext = fieldElement.GetAttribute("c");
-
-									md.AppendLine($"- `{value}`");
-									if (!string.IsNullOrEmpty(fieldContext))
-									{
-										AppendFormattedContext(md, fieldContext, "    - ");
-									}
-								}
-							}
-						}
-
-						// Methods
-						XmlNodeList methods = classElement.SelectNodes("Methods/Method");
-						if (methods.Count > 0)
-						{
-							md.AppendLine("#### Methods");
-							foreach (XmlNode methodNode in methods)
-							{
-								if (methodNode is XmlElement methodElement)
-								{
-									string value = methodElement.GetAttribute("v");
-									string methodContext = methodElement.GetAttribute("c");
-
-									md.AppendLine($"- `{value}`");
-									if (!string.IsNullOrEmpty(methodContext))
-									{
-										AppendFormattedContext(md, methodContext, "    - ");
-									}
-								}
-							}
-						}
-
-						md.AppendLine("---");
-						md.AppendLine();
-					}
-				}
-
-				File.WriteAllText(mdFilePath, md.ToString());
-				Debug.Log($"CodeAnalyzer: Markdown generated at {mdFilePath}");
 			}
-			catch (Exception e)
-			{
-				Debug.LogError($"CodeAnalyzer: Failed to generate Markdown from {xmlFilePath}. Error: {e.Message}");
-			}
+
+			File.WriteAllText(filePath, md.ToString());
+			Debug.Log($"CodeAnalyzer: Markdown generated at {filePath}");
 		}
 
 		private static void AppendFormattedContext(StringBuilder md, string context, string linePrefix)

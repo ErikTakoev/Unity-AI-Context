@@ -25,12 +25,7 @@ namespace Expecto
             {
                 XmlElement methodElement = doc.CreateElement("Method");
 
-                // Format parameters as "Type name, Type name, ..."
-                string parameters = method.Parameters != null && method.Parameters.Any()
-                    ? string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))
-                    : "";
-
-                methodElement.SetAttribute("v", $"{method.AccessModifier} {method.Name}({parameters}): {method.ReturnType}");
+                methodElement.SetAttribute("v", FormatMethod(method));
                 if (method.Context != null)
                 {
                     methodElement.SetAttribute("c", method.Context);

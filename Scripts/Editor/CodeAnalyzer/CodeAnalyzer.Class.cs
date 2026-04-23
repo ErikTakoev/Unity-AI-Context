@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Xml;
 
@@ -88,9 +87,9 @@ namespace Expecto
         /// Finds all generic types used in fields, properties, and methods in the specified assemblies.
         /// </summary>
         /// <param name="assemblies">The assemblies to search in.</param>
-        /// <param name="namespaceFilters">The namespace filters to apply.</param>
+        /// <param name="filters">The filters to apply.</param>
         /// <returns>A HashSet of generic types found in the assemblies.</returns>
-        private static HashSet<Type> FindGenericTypesInAssemblies(IEnumerable<Assembly> assemblies, List<string> namespaceFilters)
+        private static HashSet<Type> FindGenericTypesInAssemblies(IEnumerable<Assembly> assemblies, List<AnalysisFilter> filters)
         {
             HashSet<Type> genericTypesToProcess = new HashSet<Type>();
 
@@ -98,8 +97,18 @@ namespace Expecto
             {
                 foreach (Type type in assembly.GetTypes())
                 {
-                    // Skip if not in our target namespaces
-                    if (type.Namespace == null || !namespaceFilters.Any(filter => type.Namespace == filter))
+                    // Skip if not in our target namespaces or classes
+                    bool matchesAnyFilter = false;
+                    foreach (var filter in filters)
+                    {
+                        if (filter.Matches(type))
+                        {
+                            matchesAnyFilter = true;
+                            break;
+                        }
+                    }
+
+                    if (!matchesAnyFilter)
                         continue;
 
                     // Check fields
